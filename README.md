@@ -5,4 +5,4 @@
 - carpeta db: prestamos.sql
 - DB: prestamos
 - configuración: config/Conexion.php
-. # Ruta: localhost/prestamos/vistas/login.html
+# Ruta: localhost/prestamos/vistas/login.html
