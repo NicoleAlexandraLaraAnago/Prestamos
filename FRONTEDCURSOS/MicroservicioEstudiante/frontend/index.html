@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Consumption</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    input, textarea, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .response {
+      padding: 10px;
+      background: #f4f4f4;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>API Consumption</h1>
+    
+    <!-- Formulario para cursos -->
+    <h2>Crear Curso</h2>
+    <form id="cursoForm">
+      <input type="text" id="cursoNombre" placeholder="Nombre del Curso" required>
+      <textarea id="cursoDescripcion" placeholder="Descripción del Curso" required></textarea>
+      <input type="number" id="cursoCreditos" placeholder="Créditos" required>
+      <button type="submit">Crear Curso</button>
+    </form>
+    <div class="response" id="cursoResponse"></div>
+    
+    <!-- Formulario para estudiantes -->
+    <h2>Crear Estudiante</h2>
+    <form id="estudianteForm">
+      <input type="text" id="estudianteNombre" placeholder="Nombre del Estudiante" required>
+      <input type="text" id="estudianteApellido" placeholder="Apellido" required>
+      <input type="email" id="estudianteEmail" placeholder="Email" required>
+      <input type="date" id="estudianteFechaNacimiento" placeholder="Fecha de Nacimiento" required>
+      <input type="text" id="estudianteTelefono" placeholder="Teléfono">
+      <button type="submit">Crear Estudiante</button>
+    </form>
+    <div class="response" id="estudianteResponse"></div>
+  </div>
+
+  <script>
+    const apiUrl = "http://localhost:8002/api";
+
+    // Crear Curso
+    document.getElementById('cursoForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('cursoNombre').value;
+      const descripcion = document.getElementById('cursoDescripcion').value;
+      const creditos = document.getElementById('cursoCreditos').value;
+
+      try {
+        const response = await fetch(`${apiUrl}/cursos`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ nombre, descripcion, creditos }),
+        });
+        const data = await response.json();
+        document.getElementById('cursoResponse').innerText = JSON.stringify(data, null, 2);
+      } catch (error) {
+        document.getElementById('cursoResponse').innerText = `Error: ${error.message}`;
+      }
+    });
+
+    // Crear Estudiante
+    document.getElementById('estudianteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('estudianteNombre').value;
+      const apellido = document.getElementById('estudianteApellido').value;
+      const email = document.getElementById('estudianteEmail').value;
+      const fechaNacimiento = document.getElementById('estudianteFechaNacimiento').value;
+      const telefono = document.getElementById('estudianteTelefono').value;
+
+      try {
+        const response = await fetch(`${apiUrl}/estudiantes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ nombre, apellido, email, fechaNacimiento, telefono }),
+        });
+        const data = await response.json();
+        document.getElementById('estudianteResponse').innerText = JSON.stringify(data, null, 2);
+      } catch (error) {
+        document.getElementById('estudianteResponse').innerText = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

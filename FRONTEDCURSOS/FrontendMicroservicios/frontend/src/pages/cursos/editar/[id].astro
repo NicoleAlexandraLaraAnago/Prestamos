@@ -1,0 +1,80 @@
+---
+export const prerender = false;
+import MainLayout from "../../../layouts/MainLayout.astro";
+import { getCursoById } from "../../../services/cursoService";
+
+async function getProps({ params }) {
+  const curso = await getCursoById(params.id);
+  return { curso, id: params.id };
+}
+
+const { curso, id } = await getProps(Astro);
+---
+
+<MainLayout>
+  <div class="max-w-lg mx-auto bg-white shadow-lg rounded-lg p-6">
+    <h2 class="text-2xl font-bold text-gray-700 mb-4">Editar Curso</h2>
+
+<form id="editCursoForm" class="space-y-4" data-id={id}>
+  <div>
+    <label for="nombre">Nombre</label>
+    <input type="text" id="nombre" name="nombre" required value={curso.nombre} />
+  </div>
+
+  <div>
+    <label for="descripcion">Descripción</label>
+    <textarea id="descripcion" name="descripcion" required>{curso.descripcion}</textarea>
+  </div>
+
+  <div>
+    <label for="creditos">Créditos</label>
+    <input type="number" id="creditos" name="creditos" required value={curso.creditos} />
+  </div>
+
+  <button type="submit" id="submitBtn">
+    Actualizar Curso
+  </button>
+</form>
+
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("editCursoForm");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const id = form.getAttribute("data-id");
+        const formData = new FormData(event.target);
+        const cursoData = {
+          nombre: formData.get("nombre").trim(),
+          descripcion: formData.get("descripcion").trim(),
+          creditos: parseInt(formData.get("creditos"), 10),
+        };
+
+        console.log("Enviando datos:", cursoData); // 👀 Verificar antes de enviar
+
+        try {
+          const response = await fetch(`http://localhost:8002/api/cursos/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cursoData),
+          });
+
+          const responseText = await response.text();
+
+          if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${responseText}`);
+          }
+
+          alert("Curso actualizado con éxito 🎉");
+          window.location.href = "/cursos";
+        } catch (error) {
+          alert(`❌ Error en la API: ${error.message}`);
+          console.error("Detalles del error:", error);
+        }
+      });
+    });
+  </script>
+</MainLayout>

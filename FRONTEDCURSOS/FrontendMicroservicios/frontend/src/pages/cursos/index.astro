@@ -1,0 +1,28 @@
+---
+// Importar el layout, el componente y el servicio de cursos
+import MainLayout from '../../layouts/MainLayout.astro';
+import CursoCard from '../../components/CursoCard.astro';
+import * as cursoService from "../../services/cursoService";
+
+// Obtener los cursos en la carga inicial
+const cursos = await cursoService.obtenerCursos();
+---
+
+<MainLayout>
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold">Lista de Cursos</h1>
+    <a href="/cursos/agregar-curso" class="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600">
+      Agregar Curso
+    </a>
+  </div>
+
+  <div class="flex flex-wrap gap-4">
+    {cursos.length > 0 ? (
+      cursos.map((curso) => (
+        <CursoCard curso={curso} />
+      ))
+    ) : (
+      <p class="text-gray-500">No hay cursos registrados.</p>
+    )}
+  </div>
+</MainLayout>

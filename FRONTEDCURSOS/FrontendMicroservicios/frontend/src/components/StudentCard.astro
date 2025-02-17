@@ -1,0 +1,27 @@
+---
+// Recibimos el estudiante como propiedad.
+const { student } = Astro.props;
+
+// Validar la estructura de "student" por si está incompleta
+const { id = '', nombre = '', apellido = '', email = '', telefono = '' } = student || {};
+---
+
+<div class="bg-white shadow-md rounded-md p-4 mb-4">
+  <h2 class="text-xl font-semibold">{nombre} {apellido}</h2>
+  <p class="text-gray-700">{email}</p>
+  <p class="text-gray-700">Teléfono: {telefono}</p>
+
+  <div class="mt-2">
+    <a href={`/estudiantes/editar/${id}`} class="bg-gray-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded ml-2">
+      Editar
+    </a>
+    <form method="POST" action={`/api/estudiantes/${id}`} class="inline-block ml-2">
+      <button 
+        type="submit"
+        class="bg-orange-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+        onclick="return confirm('¿Estás seguro de eliminar este estudiante?');">
+        Eliminar
+      </button>
+    </form>
+  </div>
+</div>
