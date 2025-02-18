@@ -1,169 +1,116 @@
-<?php 
-session_start(); 
+<?php
+session_start();
 require_once "../modelos/Usuarios.php";
 
-$usuarios=new Usuarios();
+$usuarios = new Usuarios();
 
-$idusuario=isset($_POST["idusuario"])? limpiarCadena($_POST["idusuario"]):"";
-$nombre=isset($_POST["nombre"])? limpiarCadena($_POST["nombre"]):"";
-$direccion=isset($_POST["direccion"])? limpiarCadena($_POST["direccion"]):"";
-$telefono=isset($_POST["telefono"])? limpiarCadena($_POST["telefono"]):"";
-$login=isset($_POST["login"])? limpiarCadena($_POST["login"]):"";
-$clave=isset($_POST["clave"])? limpiarCadena($_POST["clave"]):"";
-$imagen=isset($_POST["imagen"])? limpiarCadena($_POST["imagen"]):"";
+function limpiarEntrada($data)
+{
+	return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
+}
 
-switch ($_GET["op"]){
-        
+$idusuario = isset($_POST["idusuario"]) ? limpiarEntrada($_POST["idusuario"]) : "";
+$nombre = isset($_POST["nombre"]) ? limpiarEntrada($_POST["nombre"]) : "";
+$direccion = isset($_POST["direccion"]) ? limpiarEntrada($_POST["direccion"]) : "";
+$telefono = isset($_POST["telefono"]) ? limpiarEntrada($_POST["telefono"]) : "";
+$login = isset($_POST["login"]) ? limpiarEntrada($_POST["login"]) : "";
+$clave = isset($_POST["clave"]) ? limpiarEntrada($_POST["clave"]) : "";
+$imagen = isset($_POST["imagen"]) ? limpiarEntrada($_POST["imagen"]) : "";
+
+switch ($_GET["op"]) {
 	case 'guardaryeditar':
-        
-        if (!file_exists($_FILES['imagen']['tmp_name']) || !is_uploaded_file($_FILES['imagen']['tmp_name']))
-		{
-			$imagen=$_POST["imagenactual"];
-		}
-		else 
-		{
+		if (!file_exists($_FILES['imagen']['tmp_name']) || !is_uploaded_file($_FILES['imagen']['tmp_name'])) {
+			$imagen = limpiarEntrada($_POST["imagenactual"]);
+		} else {
 			$ext = explode(".", $_FILES["imagen"]["name"]);
-			if ($_FILES['imagen']['type'] == "image/jpg" || $_FILES['imagen']['type'] == "image/jpeg" || $_FILES['imagen']['type'] == "image/png")
-			{
+			if (in_array($_FILES['imagen']['type'], ["image/jpg", "image/jpeg", "image/png"])) {
 				$imagen = round(microtime(true)) . '.' . end($ext);
 				move_uploaded_file($_FILES["imagen"]["tmp_name"], "../files/usuarios/" . $imagen);
 			}
 		}
-		//Hash SHA256 en la contraseña
-		$clavehash=hash("SHA256",$clave);
-        
-		if (empty($idusuario)){
-			$rspta=$usuarios->insertar($nombre,$direccion,$telefono,$login,$clavehash,$imagen,$_POST['permiso']);
+
+		// Si se proporciona una nueva contraseña, la encripta con bcrypt.
+		$clavehash = !empty($clave) ? password_hash($clave, PASSWORD_BCRYPT) : $_POST["claveactual"];
+
+		if (empty($idusuario)) {
+			$rspta = $usuarios->insertar($nombre, $direccion, $telefono, $login, $clavehash, $imagen, $_POST['permiso']);
 			echo $rspta ? "Usuario registrado" : "Usuario no se pudo registrar";
-		}
-		else {
-			$rspta=$usuarios->editar($idusuario,$nombre,$direccion,$telefono,$login,$clavehash,$imagen,$_POST['permiso']);
+		} else {
+			$rspta = $usuarios->editar($idusuario, $nombre, $direccion, $telefono, $login, $clavehash, $imagen, $_POST['permiso']);
 			echo $rspta ? "Usuario actualizado" : "Usuario no se pudo actualizar";
 		}
-	break;
+		break;
 
 	case 'desactivar':
-		$rspta=$usuarios->desactivar($idusuario);
- 		echo $rspta ? "Usuario Desactivado" : "Usuario no se puede desactivar";
-	break;
+		echo $usuarios->desactivar($idusuario) ? "Usuario Desactivado" : "Usuario no se puede desactivar";
+		break;
 
 	case 'activar':
-		$rspta=$usuarios->activar($idusuario);
- 		echo $rspta ? "Usuario activado" : "Usuario no se puede activar";
-	break;
-        
+		echo $usuarios->activar($idusuario) ? "Usuario activado" : "Usuario no se puede activar";
+		break;
+
 	case 'mostrar':
-		$rspta=$usuarios->mostrar($idusuario);
- 		//Codificar el resultado utilizando json
- 		echo json_encode($rspta);
-	break;
+		echo json_encode($usuarios->mostrar($idusuario));
+		break;
 
-case 'listar':
-		$rspta=$usuarios->listar();
- 		//Vamos a declarar un array
- 		$data= Array();
+	case 'listar':
+		$rspta = $usuarios->listar();
+		$data = [];
+		while ($reg = $rspta->fetch_object()) {
+			$data[] = [
+				"0" => ($reg->estado) ? '<button class="btn btn-warning" onclick="mostrar(' . $reg->idusuario . ')"><i class="fa fa-pencil"></i></button>' .
+					' <button class="btn btn-danger" onclick="desactivar(' . $reg->idusuario . ')"><i class="fa fa-close"></i></button>' :
+					'<button class="btn btn-warning" onclick="mostrar(' . $reg->idusuario . ')"><i class="fa fa-pencil"></i></button>' .
+					' <button class="btn btn-primary" onclick="activar(' . $reg->idusuario . ')"><i class="fa fa-check"></i></button>',
+				"1" => limpiarEntrada($reg->nombre),
+				"2" => limpiarEntrada($reg->direccion),
+				"3" => limpiarEntrada($reg->telefono),
+				"4" => limpiarEntrada($reg->login),
+				"5" => "<img src='../files/usuarios/" . limpiarEntrada($reg->imagen) . "' height='50px' width='50px' >",
+				"6" => ($reg->estado) ? '<span class="label bg-primary">Activado</span>' : '<span class="label bg-danger">Desactivado</span>'
+			];
+		}
+		echo json_encode(["sEcho" => 1, "iTotalRecords" => count($data), "iTotalDisplayRecords" => count($data), "aaData" => $data]);
+		break;
 
- 		while ($reg=$rspta->fetch_object()){
- 			$data[]=array(
- 				"0"=>($reg->estado)?'<button class="btn btn-warning" onclick="mostrar('.$reg->idusuario.')"><i class="fa fa-pencil"></i></button>'.
- 					' <button class="btn btn-danger" onclick="desactivar('.$reg->idusuario.')"><i class="fa fa-close"></i></button>':
- 					'<button class="btn btn-warning" onclick="mostrar('.$reg->idusuario.')"><i class="fa fa-pencil"></i></button>'.
- 					' <button class="btn btn-primary" onclick="activar('.$reg->idusuario.')"><i class="fa fa-check"></i></button>',
- 				"1"=>$reg->nombre,
- 				"2"=>$reg->direccion,
- 				"3"=>$reg->telefono,
- 				"4"=>$reg->login,
- 				"5"=>"<img src='../files/usuarios/".$reg->imagen."' height='50px' width='50px' >",
- 				"6"=>($reg->estado)?'<span class="label bg-primary">Activado</span>':'<span class="label bg-danger">Desactivado</span>'
- 				);
- 		}
- 		$results = array(
- 			"sEcho"=>1, //Información para el datatables
- 			"iTotalRecords"=>count($data), //enviamos el total registros al datatable
- 			"iTotalDisplayRecords"=>count($data), //enviamos el total registros a visualizar
- 			"aaData"=>$data);
- 		echo json_encode($results);
+	case 'verificar':
+		$logina = limpiarEntrada($_POST['logina']);
+		$clavea = limpiarEntrada($_POST['clavea']);
 
-	break;
-    
-    case 'permisos':
-		//Obtenemos todos los permisos de la tabla permisos
-		require_once "../modelos/Permiso.php";
-		$permiso = new Permisos();
-		$rspta = $permiso->listar();
+		$rspta = $usuarios->verificar($logina); // Obtener el usuario sin verificar clave
+		$fetch = $rspta->fetch_object();
 
-		//Obtener los permisos asignados al usuario
-		$id=$_GET['id'];
-		$marcados = $usuarios->listarmarcados($id);
-		//Declaramos el array para almacenar todos los permisos marcados
-		$valores=array();
+		if ($fetch && password_verify($clavea, $fetch->clave)) {
 
-		//Almacenar los permisos asignados al usuario en el array
-		while ($per = $marcados->fetch_object())
-			{
+			// Contraseña correcta, iniciar sesión
+			$_SESSION['idusuario'] = $fetch->idusuario;
+			$_SESSION['nombre'] = $fetch->nombre;
+			$_SESSION['imagen'] = $fetch->imagen;
+			$_SESSION['login'] = $fetch->login;
+
+			$marcados = $usuarios->listarmarcados($fetch->idusuario);
+			$valores = [];
+			while ($per = $marcados->fetch_object()) {
 				array_push($valores, $per->idpermiso);
 			}
 
-		//Mostramos la lista de permisos en la vista y si están o no marcados
-		while ($reg = $rspta->fetch_object())
-				{
-					$sw=in_array($reg->idpermiso,$valores)?'checked':'';
-					echo '<li> <input type="checkbox" '.$sw.'  name="permiso[]" value="'.$reg->idpermiso.'">'.$reg->permiso.'</li>';
-				}
-	break;
-        
-        case 'verificar':
-		$logina=$_POST['logina'];
-	    $clavea=$_POST['clavea'];
+			$_SESSION['Escritorio'] = in_array(1, $valores) ? 1 : 0;
+			$_SESSION['Clientes'] = in_array(2, $valores) ? 1 : 0;
+			$_SESSION['Prestamos'] = in_array(3, $valores) ? 1 : 0;
+			$_SESSION['Pagos'] = in_array(4, $valores) ? 1 : 0;
+			$_SESSION['Usuarios'] = in_array(5, $valores) ? 1 : 0;
+			$_SESSION['Gastos'] = in_array(6, $valores) ? 1 : 0;
+			$_SESSION['Consultas'] = in_array(7, $valores) ? 1 : 0;
 
-	    //Hash SHA256 en la contraseña
-		$clavehash=hash("SHA256",$clavea);
+			echo json_encode($fetch);
+		} else {
+			echo json_encode(["error" => "Usuario o contraseña incorrectos"]);
+		}
+		break;
 
-		$rspta=$usuarios->verificar($logina, $clavehash);
-
-		$fetch=$rspta->fetch_object();
-
-		if (isset($fetch))
-	    {
-	        //Declaramos las variables de sesión
-	        $_SESSION['idusuario']=$fetch->idusuario;
-	        $_SESSION['nombre']=$fetch->nombre;
-	        $_SESSION['imagen']=$fetch->imagen;
-	        $_SESSION['login']=$fetch->login;
-
-	        //Obtenemos los permisos del usuario
-	    	$marcados = $usuarios->listarmarcados($fetch->idusuario);
-
-	    	//Declaramos el array para almacenar todos los permisos marcados
-			$valores=array();
-
-			//Almacenamos los permisos marcados en el array
-			while ($per = $marcados->fetch_object())
-				{
-					array_push($valores, $per->idpermiso);
-				}
-
-			//Determinamos los accesos del usuario
-			in_array(1,$valores)?$_SESSION['Escritorio']=1:$_SESSION['Escritorio']=0;
-			in_array(2,$valores)?$_SESSION['Clientes']=1:$_SESSION['Clientes']=0;
-			in_array(3,$valores)?$_SESSION['Prestamos']=1:$_SESSION['Prestamos']=0;
-			in_array(4,$valores)?$_SESSION['Pagos']=1:$_SESSION['Pagos']=0;
-			in_array(5,$valores)?$_SESSION['Usuarios']=1:$_SESSION['Usuarios']=0;
-			in_array(6,$valores)?$_SESSION['Gastos']=1:$_SESSION['Gastos']=0;
-			in_array(7,$valores)?$_SESSION['Consultas']=1:$_SESSION['Consultas']=0;
-
-	    }
-	    echo json_encode($fetch);
-	break;
-        
-        case 'salir':
-		//Limpiamos las variables de sesión   
-        session_unset();
-        //Destruìmos la sesión
-        session_destroy();
-        //Redireccionamos al loginPrestamos
-        header("Location: ../index.php");
-
-	break;
+	case 'salir':
+		session_unset();
+		session_destroy();
+		header("Location: ../index.php");
+		break;
 }
-?>

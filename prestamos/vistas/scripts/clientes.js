@@ -1,14 +1,15 @@
 var tabla;
 
 //Funcion que se ejecuta al inicio
-
 function init() {
     mostrarform(false);
     listar();
 
+    // Asegurarse de que la validación y el CSRF token están presentes
     $("#formulario").on("submit", function (e) {
+        e.preventDefault();
         guardaryeditar(e);
-    })
+    });
 }
 
 //Funcion Limpiar
@@ -21,7 +22,6 @@ function limpiar() {
 }
 
 //Mostrar Formulario
-
 function mostrarform(flag) {
     limpiar();
     if (flag) {
@@ -40,7 +40,6 @@ function cancelarform() {
     limpiar();
     mostrarform(false);
 }
-
 
 function listar() {
     tabla = $('#tbllistado').dataTable({
@@ -64,14 +63,17 @@ function listar() {
         "iDisplayLength": 10, //Paginación
         "order": [
             [2, "asc"]
-        ] //Ordenar (columna,orden)
+        ]
     }).DataTable();
 }
 
 function guardaryeditar(e) {
-    e.preventDefault(); //No se activará la acción predeterminada del evento
+    e.preventDefault();
     $("#btnGuardar").prop("disabled", true);
     var formData = new FormData($("#formulario")[0]);
+
+    // Incluir token CSRF en la solicitud
+    formData.append('csrf_token', $('#csrf_token').val());
 
     $.ajax({
         url: "../ajax/clientes.php?op=guardaryeditar",
@@ -79,7 +81,6 @@ function guardaryeditar(e) {
         data: formData,
         contentType: false,
         processData: false,
-
         success: function (datos) {
             bootbox.alert(datos);
             mostrarform(false);
@@ -101,7 +102,6 @@ function mostrar(idcliente) {
         $("#direccion").val(data.direccion);
         $("#telefono").val(data.telefono);
         $("#idcliente").val(data.idcliente);
-
     })
 }
 

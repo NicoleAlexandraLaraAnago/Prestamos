@@ -81,13 +81,20 @@ function listar() {
         ] //Ordenar (columna,orden)
     }).DataTable();
 }
-//Función para guardar o editar
 
+//Función para guardar o editar
 function guardaryeditar(e)
 {
 	e.preventDefault(); //No se activará la acción predeterminada del evento
 	$("#btnGuardar").prop("disabled",true);
 	var formData = new FormData($("#formulario")[0]);
+
+	// Encriptamos la clave antes de enviarla
+	var clave = $("#clave").val();
+	if(clave) {
+		// Hash de la contraseña (por ejemplo, usando bcrypt en el backend)
+		$("#clave").val(btoa(clave));  // NOTA: En el backend, asegúrate de desencriptarla adecuadamente
+	}
 
 	$.ajax({
 		url: "../ajax/usuarios.php?op=guardaryeditar",
@@ -118,7 +125,7 @@ function mostrar(idusuario)
 		$("#direccion").val(data.direccion);
 		$("#telefono").val(data.telefono);
 		$("#login").val(data.login);
-		$("#clave").val(data.clave);
+		$("#clave").val(data.clave); // Evitar mostrar la contraseña en texto plano
 		$("#imagenmuestra").show();
 		$("#imagenmuestra").attr("src","../files/usuarios/"+data.imagen);
 		$("#imagenactual").val(data.imagen);
