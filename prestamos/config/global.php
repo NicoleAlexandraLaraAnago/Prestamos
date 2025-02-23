@@ -1,6 +1,8 @@
-<?php 
+<?php
 //Ip de la pc servidor de base de datos
-define("DB_HOST","localhost");
+define("DB_HOST", "localhost");
+
+define("DB_PORT", 3308);
 
 //Nombre de la base de datos
 define("DB_NAME", "prestamos");
@@ -12,8 +14,10 @@ define("DB_USERNAME", "root");
 define("DB_PASSWORD", "");
 
 //definimos la codificación de los caracteres
-define("DB_ENCODE","utf8");
+define("DB_ENCODE", "utf8");
 
 //Definimos una constante como nombre del proyecto
-define("PRO_NOMBRE","Prestamos");
+define("PRO_NOMBRE", "Prestamos");
+
+
 ?>
