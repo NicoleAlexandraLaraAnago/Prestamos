@@ -3,7 +3,9 @@ const Usuario = require('../models/Usuario');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const speakeasy = require('speakeasy');
+const nodemailer = require('nodemailer');
 
+// Función para autenticar usuario
 const autenticarUsuario = async (correo, contrasena) => {
   console.log("Buscando usuario con correo:", correo);
 
@@ -27,20 +29,41 @@ const autenticarUsuario = async (correo, contrasena) => {
   return usuario;
 };
 
+// Generación del token de recuperación
 const generarTokenRecuperacion = (usuario) => {
   const payload = { id: usuario.id, correo: usuario.correo };
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 };
 
+// Enviar correo de recuperación
 const sendRecoveryEmail = async (correo) => {
   const usuario = await Usuario.findOne({ where: { correo } });
   if (!usuario) return false;
 
   const token = generarTokenRecuperacion(usuario);
-  // Aquí enviarías el correo con el enlace de recuperación
+  
+  // Configuración del correo
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: correo,
+    subject: 'Recuperación de Contraseña',
+    text: `Haga clic en el siguiente enlace para recuperar su contraseña: ${process.env.BASE_URL}/reset-password?token=${token}`,
+  };
+
+  // Enviar correo
+  await transporter.sendMail(mailOptions);
   return true;
 };
 
+// Restablecer la contraseña
 const resetearContrasena = async (token, nueva_contrasena) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -58,6 +81,7 @@ const resetearContrasena = async (token, nueva_contrasena) => {
   }
 };
 
+// Generar el secreto para MFA
 const generarSecretoMFA = (usuario) => {
   const secreto = speakeasy.generateSecret({ length: 20 });
   usuario.mfa_secret = secreto.base32; // Guardar el secreto en la base de datos
@@ -65,6 +89,7 @@ const generarSecretoMFA = (usuario) => {
   return secreto.otpauth_url; // URL para configurar Google Authenticator
 };
 
+// Verificar el código MFA
 const verificarCodigoMFA = (usuario, codigo) => {
   return speakeasy.totp.verify({
     secret: usuario.mfa_secret,
@@ -73,7 +98,6 @@ const verificarCodigoMFA = (usuario, codigo) => {
   });
 };
 
-// Exportar todas las funciones juntas
 module.exports = {
   autenticarUsuario,
   sendRecoveryEmail,

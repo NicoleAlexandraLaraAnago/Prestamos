@@ -1,33 +1,36 @@
-import React, { createContext, useState, useEffect } from "react";
-import { loginUser } from "../services/authService";
+// /src/context/AuthContext.js
+import React, { createContext, useState } from 'react';
+import axios from 'axios';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    return JSON.parse(localStorage.getItem("user")) || null;
-  });
+  const [authData, setAuthData] = useState(null);
 
-  useEffect(() => {
-    localStorage.setItem("user", JSON.stringify(user));
-  }, [user]);
+  // Modificación en el login: ahora también se pasa el mfaSecret
+  const login = async (username, password, mfaCode = '', mfaSecret = '') => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/usuarios/login', {
+        correo: username,
+        contrasena: password,
+        codigo_mfa: mfaCode, // Enviar MFA code si es requerido
+        secret_mfa: mfaSecret, // Enviar el MFA secret cuando es necesario
+      });
 
-  const login = async (username, password) => {
-    const userData = await loginUser(username, password);
-    if (userData.success) {  // Corrección aquí
-      setUser(userData.usuario);
+      if (response.data.success) {
+        setAuthData(response.data); // Guardar datos del usuario (como token, etc.)
+        return { success: true, mfaRequired: response.data.mfaRequired }; // Devolver si MFA es requerido
+      } else {
+        return { success: false, mensaje: response.data.mensaje };
+      }
+    } catch (error) {
+      console.error('Error en login:', error);
+      return { success: false, mensaje: 'Error en el servidor' };
     }
-    return userData; // Para que Login.js pueda manejar la respuesta
-  };
-  
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ authData, login }}>
       {children}
     </AuthContext.Provider>
   );
