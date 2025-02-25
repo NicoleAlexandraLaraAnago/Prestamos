@@ -10,7 +10,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate("/login");
+      //navigate("/login");
     } else {
       // Cargar información del usuario
     }

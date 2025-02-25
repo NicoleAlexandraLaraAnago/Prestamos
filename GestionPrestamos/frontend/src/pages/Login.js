@@ -1,8 +1,7 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import styled from "styled-components";
-import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import Button from "../components/Button";
 
 const LoginWrapper = styled.div`
   display: flex;
@@ -31,115 +30,64 @@ const Input = styled.input`
   font-size: 16px;
 `;
 
-const ForgotPasswordLink = styled.a`
-  display: block;
-  margin-top: 10px;
-  color: #025928;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-const MFAInputWrapper = styled.div`
-  margin-top: 20px;
-`;
-
 const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [mfaCode, setMfaCode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [mfaRequired, setMfaRequired] = useState(false);
-  const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [code, setCode] = useState('');
+    const [message, setMessage] = useState('');
+    const [showCodeInput, setShowCodeInput] = useState(false);
+    const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const result = await login(username, password);
-      if (result?.success) {
-        if (result.mfaRequired) {
-          setMfaRequired(true);
-        } else {
-          navigate("/Dashboard");
+    const sendCode = async () => {
+        if (!email) {
+            setMessage('Por favor, ingresa tu correo electrónico');
+            return;
         }
-      } else {
-        setError(result?.mensaje || "Error al iniciar sesión");
-      }
-    } catch (err) {
-      setError("Error al procesar la solicitud");
-    } finally {
-      setLoading(false);
-    }
-  };
+        try {
+            await axios.post('http://localhost:5000/api/auth/send-code', { email });
+            setMessage('Código enviado a tu correo');
+            setShowCodeInput(true);
+        } catch (error) {
+            setMessage(error.response?.data?.message || 'Error al enviar el código');
+        }
+    };
 
-  const handleMFA = async () => {
-    setLoading(true);
-    setError("");
+    const verifyCode = async () => {
+        console.log('Verificando código');
+        try {
+            console.log('Verificado código 1');
+            await axios.post('http://localhost:5000/api/auth/verify-code', { email, code });
+            navigate('/pages/Dashboard/Dashboard');
+        } catch (error) {
+            setMessage(error.response?.data?.message || 'Código incorrecto');
+        }
+    };
 
-    try {
-      const result = await login(username, password, mfaCode);
-      if (result?.success) {
-        navigate("/Dashboard");
-      } else {
-        setError(result?.mensaje || "Error al verificar el código MFA");
-      }
-    } catch (err) {
-      setError("Error al procesar el código MFA");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <LoginWrapper>
-      <LoginForm>
-        <h2>Iniciar Sesión</h2>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        {!mfaRequired ? (
-          <>
-            <Input
-              type="text"
-              placeholder="Correo Electrónico"
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={loading}
-            />
-            <Input
-              type="password"
-              placeholder="Contraseña"
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-            />
-            <Button
-              text={loading ? "Cargando..." : "Iniciar Sesión"}
-              onClick={handleLogin}
-              disabled={loading || !username || !password}
-            />
-            <ForgotPasswordLink href="#">Olvidé mi contraseña</ForgotPasswordLink>
-          </>
-        ) : (
-          <MFAInputWrapper>
-            <Input
-              type="text"
-              placeholder="Código MFA"
-              onChange={(e) => setMfaCode(e.target.value)}
-              disabled={loading}
-            />
-            <Button
-              text={loading ? "Cargando..." : "Verificar Código"}
-              onClick={handleMFA}
-              disabled={loading || !mfaCode}
-            />
-          </MFAInputWrapper>
-        )}
-      </LoginForm>
-    </LoginWrapper>
-  );
+    return (
+        <LoginWrapper>
+            <LoginForm>
+                <h2>Login</h2>
+                <Input
+                    type="email"
+                    placeholder="Correo electrónico"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                <button onClick={sendCode}>Enviar Código</button>
+                {showCodeInput && (
+                    <>
+                        <Input
+                            type="text"
+                            placeholder="Código de verificación"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                        />
+                        <button type="button" onClick={verifyCode}>Confirmar</button>
+                    </>
+                )}
+                <p>{message}</p>
+            </LoginForm>
+        </LoginWrapper>
+    );
 };
 
 export default Login;
