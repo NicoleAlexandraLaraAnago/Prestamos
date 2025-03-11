@@ -60,7 +60,11 @@ else if(this.currStep){step=this.currStep;}
 if(this.opt.isTourBubble){currTour=winHopscotch.getCurrTour();if(currTour){customTourData=currTour.customData;tourSpecificRenderer=currTour.customRenderer;unsafe=currTour.unsafe;if(Array.isArray(currTour.steps)){totalSteps=currTour.steps.length;isLast=(idx===totalSteps- 1);}}}else{customTourData=step.customData;tourSpecificRenderer=step.customRenderer;unsafe=step.unsafe;}
 if(isLast){nextBtnText=utils.getI18NString('doneBtn');}else if(step.showSkip){nextBtnText=utils.getI18NString('skipBtn');}else{nextBtnText=utils.getI18NString('nextBtn');}
 if(!step.placement&&step.orientation){step.placement=step.orientation;}
-this.placement=step.placement;opts={i18n:{prevBtn:utils.getI18NString('prevBtn'),nextBtn:nextBtnText,closeTooltip:utils.getI18NString('closeTooltip'),stepNum:this._getStepI18nNum(idx),},buttons:{showPrev:(utils.valOrDefault(step.showPrevButton,this.opt.showPrevButton)&&(idx>0)),showNext:utils.valOrDefault(step.showNextButton,this.opt.showNextButton),showCTA:utils.valOrDefault((step.showCTAButton&&step.ctaLabel),false),ctaLabel:step.ctaLabel,showClose:utils.valOrDefault(this.opt.showCloseButton,true)},step:{num:idx,isLast:utils.valOrDefault(isLast,false),title:(step.title||''),content:(step.content||''),placement:step.placement,padding:utils.valOrDefault(step.padding,this.opt.bubblePadding),width:utils.getPixelValue(step.width)||this.opt.bubbleWidth,customData:(step.customData||{})},tour:{isTour:this.opt.isTourBubble,numSteps:totalSteps,unsafe:utils.valOrDefault(unsafe,false),customData:(customTourData||{})}};if(typeof tourSpecificRenderer==='function'){el.innerHTML=tourSpecificRenderer(opts);}
+if (typeof tourSpecificRenderer === 'function') {
+  const safeHTML = tourSpecificRenderer(opts); 
+  el.innerHTML = DOMPurify.sanitize(safeHTML); // Usar una librería de sanitización como DOMPurify
+}
+
 else if(typeof tourSpecificRenderer==='string'){if(!hopscotch.templates||(typeof hopscotch.templates[tourSpecificRenderer]!=='function')){throw'Bubble rendering failed - template "'+ tourSpecificRenderer+'" is not a function.';}
 el.innerHTML=hopscotch.templates[tourSpecificRenderer](opts);}
 else if(customRenderer){el.innerHTML=customRenderer(opts);}

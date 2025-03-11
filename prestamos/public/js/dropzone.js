@@ -1,28 +1,4 @@
-/*
- *
- * More info at [www.dropzonejs.com](http://www.dropzonejs.com)
- *
- * Copyright (c) 2012, Matias Meno
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
- */
+
 ;(function(){function require(path,parent,orig){var resolved=require.resolve(path);if(null==resolved){orig=orig||path;parent=parent||'root';var err=new Error('Failed to require "'+ orig+'" from "'+ parent+'"');err.path=orig;err.parent=parent;err.require=true;throw err;}
 var module=require.modules[resolved];if(!module.exports){module.exports={};module.client=module.component=true;module.call(this,module.exports,require.relative(resolved),module);}
 return module.exports;}
@@ -66,7 +42,76 @@ _this.hiddenFileInput=document.createElement("input");_this.hiddenFileInput.setA
 _this.hiddenFileInput.style.visibility="hidden";_this.hiddenFileInput.style.position="absolute";_this.hiddenFileInput.style.top="0";_this.hiddenFileInput.style.left="0";_this.hiddenFileInput.style.height="0";_this.hiddenFileInput.style.width="0";document.body.appendChild(_this.hiddenFileInput);return _this.hiddenFileInput.addEventListener("change",function(){var files;files=_this.hiddenFileInput.files;if(files.length){_this.emit("selectedfiles",files);_this.handleFiles(files);}
 return setupHiddenFileInput();});};setupHiddenFileInput();}
 this.URL=(_ref=window.URL)!=null?_ref:window.webkitURL;_ref1=this.events;for(_i=0,_len=_ref1.length;_i<_len;_i++){eventName=_ref1[_i];this.on(eventName,this.options[eventName]);}
-this.on("uploadprogress",function(){return _this.updateTotalUploadProgress();});this.on("removedfile",function(){return _this.updateTotalUploadProgress();});this.on("canceled",function(file){return _this.emit("complete",file);});noPropagation=function(e){e.stopPropagation();if(e.preventDefault){return e.preventDefault();}else{return e.returnValue=false;}};this.listeners=[{element:this.element,events:{"dragstart":function(e){return _this.emit("dragstart",e);},"dragenter":function(e){noPropagation(e);return _this.emit("dragenter",e);},"dragover":function(e){noPropagation(e);return _this.emit("dragover",e);},"dragleave":function(e){return _this.emit("dragleave",e);},"drop":function(e){noPropagation(e);return _this.drop(e);},"dragend":function(e){return _this.emit("dragend",e);}}}];this.clickableElements.forEach(function(clickableElement){return _this.listeners.push({element:clickableElement,events:{"click":function(evt){if((clickableElement!==_this.element)||(evt.target===_this.element||Dropzone.elementInside(evt.target,_this.element.querySelector(".dz-message")))){return _this.hiddenFileInput.click();}}}});});this.enable();return this.options.init.call(this);};Dropzone.prototype.destroy=function(){var _ref;this.disable();this.removeAllFiles(true);if((_ref=this.hiddenFileInput)!=null?_ref.parentNode:void 0){this.hiddenFileInput.parentNode.removeChild(this.hiddenFileInput);this.hiddenFileInput=null;}
+this.on("uploadprogress", () => _this.updateTotalUploadProgress());
+this.on("removedfile", () => _this.updateTotalUploadProgress());
+this.on("canceled", (file) => _this.emit("complete", file));
+
+const noPropagation = (e) => {
+    e.stopPropagation();
+    if (e.preventDefault) {
+        e.preventDefault();
+    } else {
+        e.returnValue = false;
+    }
+};
+
+this.listeners = [
+    {
+        element: this.element,
+        events: {
+            "dragstart": (e) => _this.emit("dragstart", e),
+            "dragenter": (e) => {
+                noPropagation(e);
+                _this.emit("dragenter", e);
+            },
+            "dragover": (e) => {
+                noPropagation(e);
+                _this.emit("dragover", e);
+            },
+            "dragleave": (e) => _this.emit("dragleave", e),
+            "drop": (e) => {
+                noPropagation(e);
+                _this.drop(e);
+            },
+            "dragend": (e) => _this.emit("dragend", e)
+        }
+    }
+];
+
+this.clickableElements.forEach((clickableElement) => {
+    this.listeners.push({
+        element: clickableElement,
+        events: {
+            "click": (evt) => {
+                if (
+                    clickableElement !== _this.element ||
+                    (evt.target === _this.element ||
+                    Dropzone.elementInside(evt.target, _this.element.querySelector(".dz-message")))
+                ) {
+                    // Aseguramos que `hiddenFileInput` es seguro antes de activarlo
+                    if (_this.hiddenFileInput && typeof _this.hiddenFileInput.click === "function") {
+                        _this.hiddenFileInput.click();
+                    }
+                }
+            }
+        }
+    });
+});
+
+this.enable();
+this.options.init.call(this);
+
+// Métodos de limpieza segura
+Dropzone.prototype.destroy = function () {
+    this.disable();
+    this.removeAllFiles(true);
+
+    if (this.hiddenFileInput && this.hiddenFileInput.parentNode) {
+        this.hiddenFileInput.parentNode.removeChild(this.hiddenFileInput);
+        this.hiddenFileInput = null;
+    }
+};
+
 return delete this.element.dropzone;};Dropzone.prototype.updateTotalUploadProgress=function(){var acceptedFiles,file,totalBytes,totalBytesSent,totalUploadProgress,_i,_len,_ref;totalBytesSent=0;totalBytes=0;acceptedFiles=this.getAcceptedFiles();if(acceptedFiles.length){_ref=this.getAcceptedFiles();for(_i=0,_len=_ref.length;_i<_len;_i++){file=_ref[_i];totalBytesSent+=file.upload.bytesSent;totalBytes+=file.upload.total;}
 totalUploadProgress=100*totalBytesSent/totalBytes;}else{totalUploadProgress=100;}
 return this.emit("totaluploadprogress",totalUploadProgress,totalBytes,totalBytesSent);};Dropzone.prototype.getFallbackForm=function(){var existingFallback,fields,fieldsString,form;if(existingFallback=this.getExistingFallback()){return existingFallback;}
