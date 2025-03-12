@@ -61,15 +61,25 @@ if(this.opt.isTourBubble){currTour=winHopscotch.getCurrTour();if(currTour){custo
 if(isLast){nextBtnText=utils.getI18NString('doneBtn');}else if(step.showSkip){nextBtnText=utils.getI18NString('skipBtn');}else{nextBtnText=utils.getI18NString('nextBtn');}
 if(!step.placement&&step.orientation){step.placement=step.orientation;}
 if (typeof tourSpecificRenderer === 'function') {
-  const safeHTML = tourSpecificRenderer(opts); 
-  el.innerHTML = DOMPurify.sanitize(safeHTML); // Usar una librería de sanitización como DOMPurify
-}
+  const safeHTML = tourSpecificRenderer(opts);
 
-else if(typeof tourSpecificRenderer==='string'){if(!hopscotch.templates||(typeof hopscotch.templates[tourSpecificRenderer]!=='function')){throw'Bubble rendering failed - template "'+ tourSpecificRenderer+'" is not a function.';}
-el.innerHTML=hopscotch.templates[tourSpecificRenderer](opts);}
-else if(customRenderer){el.innerHTML=customRenderer(opts);}
-else{if(!hopscotch.templates||(typeof hopscotch.templates[templateToUse]!=='function')){throw'Bubble rendering failed - template "'+ templateToUse+'" is not a function.';}
-el.innerHTML=hopscotch.templates[templateToUse](opts);}
+  if (el) {
+    // Sanitize and render only the allowed tags
+    el.innerHTML = DOMPurify.sanitize(safeHTML, { ALLOWED_TAGS: ['b', 'i', 'strong', 'em', 'p', 'ul', 'li'] });
+  }
+} else if (typeof tourSpecificRenderer === 'string') {
+  if (!hopscotch.templates || typeof hopscotch.templates[tourSpecificRenderer] !== 'function') {
+    throw new Error('Bubble rendering failed - template "' + tourSpecificRenderer + '" is not a function.');
+  }
+  el.innerHTML = hopscotch.templates[tourSpecificRenderer](opts);
+} else if (customRenderer) {
+  el.innerHTML = customRenderer(opts);
+} else {
+  if (!hopscotch.templates || typeof hopscotch.templates[templateToUse] !== 'function') {
+    throw new Error('Bubble rendering failed - template "' + templateToUse + '" is not a function.');
+  }
+  el.innerHTML = hopscotch.templates[templateToUse](opts);
+}
 children=el.children;numChildren=children.length;for(i=0;i<numChildren;i++){node=children[i];if(utils.hasClass(node,'hopscotch-arrow')){this.arrowEl=node;}}
 el.style.zIndex=(typeof step.zindex==='number')?step.zindex:'auto';this._setArrow(step.placement);this.hide(false);this.setPosition(step);if(callback){callback(!step.fixedElement);}
 return this;},_getStepI18nNum:function(idx){var stepNumI18N=utils.getI18NString('stepNums');if(stepNumI18N&&idx<stepNumI18N.length){idx=stepNumI18N[idx];}

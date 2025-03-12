@@ -153,11 +153,11 @@ var button=this._fnCreateButton(buttonDef,$(wrapper).hasClass(this.classes.colle
 {var nButton=this._fnButtonBase(oConfig,bCollectionButton);if(oConfig.sAction.match(/flash/))
 {if(!this._fnHasFlash()){return false;}
 this._fnFlashConfig(nButton,oConfig);}
-else if(oConfig.sAction=="text")
-    nButton.innerHTML = DOMPurify.sanitize(oConfig.sButtonText);
+else if (oConfig.sAction == "text") 
+    nButton.textContent = oConfig.sButtonText; 
 
-else if(oConfig.sAction=="div")
-    nButton.innerHTML = DOMPurify.sanitize(oConfig.sButtonText);
+else if (oConfig.sAction == "div") 
+    nButton.innerHTML = DOMPurify.sanitize(oConfig.sButtonText, { ALLOWED_TAGS: ['b', 'i', 'strong', 'em'] });
 
 else if(oConfig.sAction=="collection")
 {this._fnTextConfig(nButton,oConfig);this._fnCollectionConfig(nButton,oConfig);}
@@ -167,13 +167,33 @@ return nButton;},"_fnButtonBase":function(o,bCollectionButton)
 else
 {sTag=o.sTag&&o.sTag!=="default"?o.sTag:this.s.tags.button;sLiner=o.sLinerTag&&o.sLinerTag!=="default"?o.sLiner:this.s.tags.liner;sClass=this.classes.buttons.normal;}
 var
-nButton=document.createElement(sTag),nSpan=document.createElement(sLiner),masterS=this._fnGetMasterSettings();nButton.className=sClass+" "+o.sButtonClass;nButton.setAttribute('id',"ToolTables_"+this.s.dt.sInstance+"_"+masterS.buttonCounter);nButton.appendChild(nSpan);nSpan.innerHTML=o.sButtonText;masterS.buttonCounter++;return nButton;},"_fnGetMasterSettings":function()
-{if(this.s.master)
-{return this.s;}
-else
-{var instances=TableTools._aInstances;for(var i=0,iLen=instances.length;i<iLen;i++)
-{if(this.dom.table==instances[i].s.dt.nTable)
-{return instances[i].s;}}}},"_fnCollectionConfig":function(nButton,oConfig)
+nButton = document.createElement(sTag);
+nSpan = document.createElement(sLiner);
+masterS = this._fnGetMasterSettings();
+
+nButton.className = sClass + " " + o.sButtonClass;
+nButton.setAttribute('id', "ToolTables_" + this.s.dt.sInstance + "_" + masterS.buttonCounter);
+nButton.appendChild(nSpan);
+
+// Evita XSS asegurando que solo texto se asigne
+nSpan.textContent = o.sButtonText;
+
+masterS.buttonCounter++;
+return nButton;
+},
+"_fnGetMasterSettings": function() {
+  if (this.s.master) {
+    return this.s;
+  } else {
+    var instances = TableTools._aInstances;
+    for (var i = 0, iLen = instances.length; i < iLen; i++) {
+      if (this.dom.table == instances[i].s.dt.nTable) {
+        return instances[i].s;
+      }
+    }
+  }
+},
+"_fnCollectionConfig": function(nButton, oConfig)
 {var nHidden=document.createElement(this.s.tags.collection.container);nHidden.style.display="none";nHidden.className=this.classes.collection.container;oConfig._collection=nHidden;document.body.appendChild(nHidden);this._fnButtonDefinations(oConfig.aButtons,nHidden);},"_fnCollectionShow":function(nButton,oConfig)
 {var
 that=this,oPos=$(nButton).offset(),nHidden=oConfig._collection,iDivX=oPos.left,iDivY=oPos.top+ $(nButton).outerHeight(),iWinHeight=$(window).height(),iDocHeight=$(document).height(),iWinWidth=$(window).width(),iDocWidth=$(document).width();nHidden.style.position="absolute";nHidden.style.left=iDivX+"px";nHidden.style.top=iDivY+"px";nHidden.style.display="block";$(nHidden).css('opacity',0);var nBackground=document.createElement('div');nBackground.style.position="absolute";nBackground.style.left="0px";nBackground.style.top="0px";nBackground.style.height=((iWinHeight>iDocHeight)?iWinHeight:iDocHeight)+"px";nBackground.style.width=((iWinWidth>iDocWidth)?iWinWidth:iDocWidth)+"px";nBackground.className=this.classes.collection.background;$(nBackground).css('opacity',0);document.body.appendChild(nBackground);document.body.appendChild(nHidden);var iDivWidth=$(nHidden).outerWidth();var iDivHeight=$(nHidden).outerHeight();if(iDivX+ iDivWidth>iDocWidth)
@@ -319,8 +339,12 @@ aData.push(aRow.join(oConfig.sFieldSeperator));if(oConfig.bOpenRows)
 {sLoopData=this._fnBoundData($('td',arr[0].nTr).html(),oConfig.sFieldBoundary,regex);aData.push(sLoopData);}}}
 if(oConfig.bFooter&&dt.nTFoot!==null)
 {aRow=[];for(i=0,iLen=dt.aoColumns.length;i<iLen;i++)
-{if(aColumnsInc[i]&&dt.aoColumns[i].nTf!==null)
-{sLoopData=dt.aoColumns[i].nTf.innerHTML.replace(/\n/g," ").replace(/<.*?>/g,"");sLoopData=this._fnHtmlDecode(sLoopData);aRow.push(this._fnBoundData(sLoopData,oConfig.sFieldBoundary,regex));}}
+    if (aColumnsInc[i] && dt.aoColumns[i].nTf !== null) {
+        sLoopData = dt.aoColumns[i].nTf.textContent.trim(); // Usa textContent para evitar XSS
+        sLoopData = this._fnHtmlDecode(sLoopData);
+        aRow.push(this._fnBoundData(sLoopData, oConfig.sFieldBoundary, regex));
+    }
+    
 aData.push(aRow.join(oConfig.sFieldSeperator));}
 var _sLastData=aData.join(this._fnNewline(oConfig));return _sLastData;},"_fnBoundData":function(sData,sBoundary,regex)
 {if(sBoundary==="")
